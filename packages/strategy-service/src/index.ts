@@ -24,4 +24,9 @@ async function main() {
   console.log('✅ Strategy Service Demo Complete');
 }
 
-main().catch(console.error);
+main()
+  .then(() => console.log('✅ Strategy Service Initialization Complete'))
+  .catch((error) => {
+    console.error('❌ Strategy Service Error:', error instanceof Error ? error.message : String(error));
+    process.exit(1);
+  });

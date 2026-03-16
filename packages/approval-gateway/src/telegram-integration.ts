@@ -32,7 +32,7 @@ export async function notifyTradeProposal(
   quantity: number,
   price: number,
   reason: string,
-  confidence?: number
+  _confidence?: number
 ): Promise<void> {
   if (!telegramNotifier) return;
 

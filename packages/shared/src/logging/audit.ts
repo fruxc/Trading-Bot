@@ -3,7 +3,7 @@
  * Centralized logging for all trade events for compliance and debugging
  */
 
-import { TradeDatabase } from '@trading-bot/shared';
+import { TradeDatabase } from "../database/schema";
 
 export interface AuditLogEvent {
   action: string;

@@ -14,7 +14,7 @@ export function createServer(db: TradeDatabase): Express {
   app.use(express.json());
 
   // Health check
-  app.get('/health', (req, res) => {
+  app.get('/health', (_req, res) => {
     res.json({ status: 'ok', service: 'approval-gateway' });
   });
 

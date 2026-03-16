@@ -16,7 +16,7 @@ export class SignalGenerator {
     // Simple strategy: buy on positive momentum, sell on negative
     let action: 'BUY' | 'SELL' | 'HOLD' = 'HOLD';
     let confidence = 0.5;
-    let reason = 'No signal';
+    let reason = 'Neutral momentum';
 
     if (signal.change24h > 2) {
       action = 'BUY';
@@ -33,7 +33,7 @@ export class SignalGenerator {
     return {
       symbol: signal.symbol,
       action,
-      confidence: parseFloat(confidence.toFixed(2)),
+      confidence: Number.parseFloat(confidence.toFixed(2)),
       price: signal.price,
       timestamp: signal.timestamp,
       reason,

@@ -5,12 +5,6 @@
 import { Trade } from '@trading-bot/shared';
 
 export class TelegramSimulator {
-  private readonly botToken: string;
-
-  constructor(botToken: string = process.env.TELEGRAM_BOT_TOKEN || 'mock-token') {
-    this.botToken = botToken;
-  }
-
   /**
    * Simulates sending a Telegram message with approval buttons
    */

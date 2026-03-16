@@ -34,6 +34,6 @@ export class MarketDataProvider {
 
     const base = basePrices[symbol] || 100;
     const variance = (Math.random() - 0.5) * base * 0.1; // ±5% variance
-    return parseFloat((base + variance).toFixed(2));
+    return Number.parseFloat((base + variance).toFixed(2));
   }
 }

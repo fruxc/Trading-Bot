@@ -1,4 +1,5 @@
 import https from "node:https";
+import type { PortfolioSummary } from "../portfolio/manager";
 
 /**
  * Telegram Bot Integration
@@ -19,27 +20,11 @@ export interface TradeNotification {
   reason: string;
   confidence?: number;
   timestamp: string;
-}
-
-export interface PortfolioSummary {
-  totalValue: number;
-  cash: number;
-  invested: number;
-  dayChange: number;
-  dayChangePercent: number;
-  weekChange: number;
-  monthChange: number;
-  positions: Array<{
-    symbol: string;
-    quantity: number;
-    averagePrice: number;
-    currentPrice: number;
-    unrealizedPL: number;
-  }>;
+  tradeId?: string;
 }
 
 export class TelegramNotifier {
-  private config: TelegramConfig;
+  private readonly config: TelegramConfig;
   private lastStatusPing = Date.now();
   private readonly STATUS_PING_INTERVAL = 6 * 60 * 60 * 1000; // 6 hours
 
@@ -59,7 +44,12 @@ export class TelegramNotifier {
     const emoji = this.getTradeEmoji(notification.type);
     const message = this.formatTradeMessage(emoji, notification);
 
-    await this.sendMessage(message);
+    // Use interactive buttons for trade proposals
+    if (notification.type === "TRADE_PROPOSED" && notification.tradeId) {
+      await this.sendMessageWithButtons(message, notification.tradeId);
+    } else {
+      await this.sendMessage(message);
+    }
   }
 
   /**
@@ -151,7 +141,7 @@ ${action === "BUY" ? "📈" : "📉"} Action: *${action}*
   /**
    * Send message with inline approval/rejection buttons
    */
-  private sendMessageWithButtons(text: string, tradeId: string): Promise<void> {
+  sendMessageWithButtons(text: string, tradeId: string): Promise<void> {
     return new Promise((resolve, reject) => {
       if (!this.config.botToken) {
         reject(new Error("Bot token not configured"));

@@ -6,11 +6,10 @@ import { IBrokerAdapter, PortfolioPosition, RiskConfig } from "../types";
  */
 export class RiskController {
   private dailyLosses = 0;
-  private maxOrdersPerDay = 50;
+  private readonly maxOrdersPerDay = 50;
   private ordersToday = 0;
-  private dayStartTime = Date.now();
 
-  constructor(private config: RiskConfig) {
+  constructor(private readonly config: RiskConfig) {
     this.resetDailyMetrics();
   }
 
@@ -46,7 +45,8 @@ export class RiskController {
     try {
       portfolio = await broker.getPortfolio();
     } catch (error) {
-      console.warn("Warning: Could not fetch portfolio, skipping position size check");
+      const message = error instanceof Error ? error.message : String(error);
+      console.warn(`Warning: Could not fetch portfolio - ${message}, skipping position size check`);
     }
 
     // 4. Calculate portfolio value
@@ -108,7 +108,7 @@ export class RiskController {
   /**
    * Record a trade execution for daily metrics tracking
    */
-  recordTradeExecution(action: "BUY" | "SELL", profitOrLoss: number): void {
+  recordTradeExecution(_action: "BUY" | "SELL", profitOrLoss: number): void {
     this.ordersToday++;
     if (profitOrLoss < 0) {
       this.dailyLosses += Math.abs(profitOrLoss);
@@ -121,7 +121,7 @@ export class RiskController {
   resetDailyMetrics(): void {
     this.dailyLosses = 0;
     this.ordersToday = 0;
-    this.dayStartTime = Date.now();
+    // dayStartTime already set, will be used for tracking
     console.log("📊 Daily risk metrics reset");
   }
 

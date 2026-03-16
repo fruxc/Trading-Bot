@@ -29,7 +29,7 @@ export async function notifyTradeExecuted(
   symbol: string,
   action: "BUY" | "SELL",
   quantity: number,
-  price: number,
+  _price: number,
   executedPrice: number,
   reason: string
 ): Promise<void> {

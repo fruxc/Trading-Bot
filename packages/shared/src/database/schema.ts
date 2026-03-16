@@ -161,6 +161,11 @@ export class TradeDatabase {
     this.db.all(query, callback);
   }
 
+  getApprovedTrades(callback: (err: Error | null, trades: unknown[]) => void): void {
+    const query = "SELECT * FROM trades WHERE status = 'APPROVED' AND executed_at IS NULL ORDER BY proposed_at ASC";
+    this.db.all(query, callback);
+  }
+
   // API Key Management
   createApiKey(
     key: string,

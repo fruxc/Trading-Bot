@@ -240,7 +240,7 @@ export class GeopoliticalAnalyzer {
   /**
    * Get risk assessment for a symbol
    */
-  assessSymbolRisk(symbol: string, country: string): {
+  assessSymbolRisk(_symbol: string, country: string): {
     riskScore: number; // 0-100
     recommendation: string;
     factors: string[];

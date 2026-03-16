@@ -38,7 +38,7 @@ export function createHealthRouter(): Router {
   /**
    * Basic health check endpoint
    */
-  router.get('/health', (req: Request, res: Response) => {
+  router.get('/health', (_req: Request, res: Response) => {
     const uptime = Math.floor((Date.now() - startTime) / 1000);
     const status: HealthStatus = {
       status: 'healthy',
@@ -52,7 +52,7 @@ export function createHealthRouter(): Router {
   /**
    * Detailed health check endpoint
    */
-  router.get('/health/detailed', (req: Request, res: Response) => {
+  router.get('/health/detailed', (_req: Request, res: Response) => {
     const uptime = Math.floor((Date.now() - startTime) / 1000);
     const status: HealthStatus = {
       status: 'healthy',
@@ -100,14 +100,14 @@ export function createHealthRouter(): Router {
   /**
    * Liveness probe (for Kubernetes)
    */
-  router.get('/live', (req: Request, res: Response) => {
+  router.get('/live', (_req: Request, res: Response) => {
     res.status(200).json({ alive: true });
   });
 
   /**
    * Readiness probe (for Kubernetes)
    */
-  router.get('/ready', (req: Request, res: Response) => {
+  router.get('/ready', (_req: Request, res: Response) => {
     const uptime = Math.floor((Date.now() - startTime) / 1000);
     const isReady = uptime > 5; // Ready after 5 seconds
 
@@ -121,7 +121,7 @@ export function createHealthRouter(): Router {
   /**
    * Version endpoint
    */
-  router.get('/version', (req: Request, res: Response) => {
+  router.get('/version', (_req: Request, res: Response) => {
     res.status(200).json({
       version: process.env.npm_package_version || '0.0.1',
       buildTime: new Date().toISOString(),

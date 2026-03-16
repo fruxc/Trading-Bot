@@ -3,9 +3,8 @@
  * Exposes webhook endpoints for trade approval/rejection
  */
 import { config } from 'dotenv';
-import { v4 as uuidv4 } from 'uuid';
 import { resolve } from 'node:path';
-import { TradeDatabase, Trade } from '@trading-bot/shared';
+import { TradeDatabase } from '@trading-bot/shared';
 import { createServer } from './server';
 import { initTelegramNotifier, testTelegramConnection } from './telegram-integration';
 
@@ -31,7 +30,7 @@ if (envPath) {
   config(); // Fallback to default
 }
 
-const PORT = parseInt(process.env.GATEWAY_PORT || '3000');
+const PORT = Number.parseInt(process.env.GATEWAY_PORT || '3000', 10);
 const db = new TradeDatabase(process.env.DATABASE_PATH);
 const app = createServer(db);
 
@@ -73,13 +72,14 @@ async function initializeServices() {
   // Demo trade generation disabled - trades created by strategy service
 }
 
-async function runDemo() {
-  // Demo disabled to prevent database pollution
-  // Trades are created by the strategy service and routed here for approval
-}
-
 // eslint-disable-next-line @typescript-eslint/no-floating-promises
-initializeServices();
+// Initialize services
+initializeServices()
+  .then(() => console.log('✅ Approval Gateway ready'))
+  .catch((error) => {
+    console.error('❌ Initialization failed:', error instanceof Error ? error.message : String(error));
+    process.exit(1);
+  });
 
 // Graceful shutdown
 process.on('SIGTERM', () => {

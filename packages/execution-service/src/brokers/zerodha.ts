@@ -1,11 +1,11 @@
 import KiteConnect from "kiteconnect";
-import { IBrokerAdapter, OrderStatus, PortfolioPosition, ExecutionResult } from "../types";
+import { IBrokerAdapter, OrderStatus, PortfolioPosition } from "../types";
 
 export class ZerodhaBroker implements IBrokerAdapter {
-  private kite: any;
+  private readonly kite: any;
   private connected = false;
-  private paperTradingMode = false;
-  private executedOrders: Map<string, OrderStatus> = new Map();
+  private readonly paperTradingMode: boolean;
+  private readonly executedOrders: Map<string, OrderStatus> = new Map();
 
   constructor(apiKey: string, accessToken: string, paperTrading = false) {
     this.kite = new KiteConnect.KiteConnect({ api_key: apiKey });
@@ -55,7 +55,7 @@ export class ZerodhaBroker implements IBrokerAdapter {
     try {
       if (this.paperTradingMode) {
         // Simulate order in paper trading mode
-        const orderId = `PAPER_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+        const orderId = `PAPER_${Date.now()}_${Math.random().toString(36).substring(2, 11)}`;
         this.executedOrders.set(orderId, {
           orderId,
           symbol,
@@ -195,9 +195,9 @@ export class ZerodhaBroker implements IBrokerAdapter {
  */
 export class MockBroker implements IBrokerAdapter {
   private connected = false;
-  private portfolio: Map<string, PortfolioPosition> = new Map();
-  private orders: Map<string, OrderStatus> = new Map();
-  private priceHistory: Map<string, number> = new Map([
+  private readonly portfolio: Map<string, PortfolioPosition> = new Map();
+  private readonly orders: Map<string, OrderStatus> = new Map();
+  private readonly priceHistory: Map<string, number> = new Map([
     ["AAPL", 150],
     ["MSFT", 320],
     ["GOOGL", 100],

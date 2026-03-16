@@ -22,7 +22,7 @@ try {
 }
 
 export class GeminiProvider implements ILLMProvider {
-  private model: any;
+  private readonly model: any;
 
   constructor() {
     if (!genAI) {
@@ -98,7 +98,7 @@ Consider:
   private parseResponse(responseText: string): TradeProposal {
     try {
       // Extract JSON from response (handle cases where model includes extra text)
-      const jsonMatch = responseText.match(/\{[\s\S]*\}/);
+      const jsonMatch = new RegExp(/\{[\s\S]*\}/).exec(responseText);
       if (!jsonMatch) {
         throw new Error('No JSON found in response');
       }

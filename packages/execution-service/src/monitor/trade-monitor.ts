@@ -147,13 +147,10 @@ export class TradeMonitor {
    */
   private getAllApprovedTrades(): Promise<Trade[]> {
     return new Promise((resolve, reject) => {
-      this.db.db.all(
-        "SELECT * FROM trades WHERE status = 'APPROVED' AND executed_at IS NULL ORDER BY proposed_at ASC",
-        (err: any, rows: Trade[]) => {
-          if (err) reject(err);
-          else resolve(rows || []);
-        }
-      );
+      this.db.getApprovedTrades((err: Error | null, rows: any) => {
+        if (err) reject(err);
+        else resolve(rows || []);
+      });
     });
   }
 
@@ -166,25 +163,15 @@ export class TradeMonitor {
     reason: string,
     executionPrice?: number
   ): Promise<void> {
-    return new Promise((resolve, reject) => {
-      const query =
-        status === "EXECUTED"
-          ? `UPDATE trades SET status = ?, executed_at = ?, execution_price = ?, updated_at = ? WHERE id = ?`
-          : `UPDATE trades SET status = ?, approval_reason = ?, updated_at = ? WHERE id = ?`;
-
-      const params =
-        status === "EXECUTED"
-          ? [status, new Date().toISOString(), executionPrice, new Date().toISOString(), tradeId]
-          : [status, reason, new Date().toISOString(), tradeId];
-
-      this.db.db.run(query, params, (err: any) => {
-        if (err) {
-          console.error(`Error updating trade ${tradeId}:`, err);
-          reject(err);
-        } else {
-          resolve();
-        }
-      });
+    return new Promise((resolve) => {
+      this.db.updateTradeStatus(
+        tradeId,
+        status as 'APPROVED' | 'REJECTED' | 'EXECUTED' | 'FAILED',
+        reason,
+        executionPrice
+      );
+      // No callback needed - method is synchronous
+      resolve();
     });
   }
 

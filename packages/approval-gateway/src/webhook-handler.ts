@@ -151,7 +151,7 @@ export class WebhookHandler {
   /**
    * Retrieves pending trades for display
    */
-  async getPendingTrades(req: Request, res: Response): Promise<void> {
+  async getPendingTrades(_req: Request, res: Response): Promise<void> {
     try {
       this.db.getPendingTrades((err, trades) => {
         if (err) {
@@ -181,7 +181,7 @@ export class WebhookHandler {
   /**
    * Retrieves all trades (for audit log)
    */
-  async getAllTrades(req: Request, res: Response): Promise<void> {
+  async getAllTrades(_req: Request, res: Response): Promise<void> {
     try {
       this.db.getAllTrades((err, trades) => {
         if (err) {

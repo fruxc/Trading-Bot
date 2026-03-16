@@ -1,167 +1,135 @@
-import { ILLMProvider, TradeSignal, TradeProposal, PortfolioContext } from "../index";
-import { GeopoliticalAnalyzer } from "../portfolio/manager";
-
 /**
- * Enhanced LLM Provider with Geopolitical Analysis
- * Considers geopolitical factors in trading decisions
+ * Enhanced LLM Providers
+ * Specialized LLM implementations for advanced trading analysis
  */
-export class EnhancedLLMProvider implements ILLMProvider {
-  private geoAnalyzer: GeopoliticalAnalyzer;
-  private baseProvider: ILLMProvider;
-
-  constructor(baseProvider: ILLMProvider) {
-    this.baseProvider = baseProvider;
-    this.geoAnalyzer = new GeopoliticalAnalyzer();
-    this.geoAnalyzer.initialize();
-  }
-
-  async evaluateSignal(signal: TradeSignal, portfolio: PortfolioContext): Promise<TradeProposal> {
-    // Get base evaluation from underlying provider
-    const baseProposal = await this.baseProvider.evaluateSignal(signal, portfolio);
-
-    // Enhance with geopolitical analysis
-    const geoRisk = this.geoAnalyzer.assessSymbolRisk(signal.symbol, signal.country || "INDIA");
-    const tradingRecommendation = this.geoAnalyzer.getTradingRecommendation();
-
-    // Adjust confidence based on geopolitical risk
-    const adjustedConfidence = this.adjustConfidenceForGeo(signal.confidence, geoRisk.riskScore);
-
-    // If geopolitical risk is critical, recommend rejection
-    if (geoRisk.riskScore > 80) {
-      return {
-        approved: false,
-        proposedAction: "HOLD",
-        quantity: 0,
-        reason: `⚠️ GEOPOLITICAL RISK ALERT: ${geoRisk.recommendation}. ${geoRisk.factors[0]}`,
-        riskAssessment: `Geopolitical risk score: ${geoRisk.riskScore}/100`,
-        recommendedStopLoss: signal.price * 0.95,
-        recommendedTakeProfit: signal.price * 1.05,
-      };
-    }
-
-    // Return enhanced proposal
-    return {
-      ...baseProposal,
-      approved: baseProposal.approved && adjustedConfidence >= 0.6,
-      reason: `${baseProposal.reason}\n\n📍 Geopolitical Assessment:\n${geoRisk.factors.join("\n")}`,
-      riskAssessment: `${baseProposal.riskAssessment}\n\nGeopolitical Risk: ${geoRisk.riskScore}/100 (${geoRisk.recommendation})`,
-      quantity: Math.floor(baseProposal.quantity * (adjustedConfidence / signal.confidence)),
-    };
-  }
-
-  getName(): string {
-    return `Enhanced_${this.baseProvider.getName()}`;
-  }
-
-  /**
-   * Adjust confidence based on geopolitical risk
-   */
-  private adjustConfidenceForGeo(originalConfidence: number, geoRiskScore: number): number {
-    // High geopolitical risk reduces confidence
-    const riskFactor = 1 - geoRiskScore / 200; // Max 50% reduction
-    return Math.max(originalConfidence * riskFactor, 0.3);
-  }
-
-  /**
-   * Get geopolitical factors for reporting
-   */
-  getGeopoliticalFactors() {
-    return this.geoAnalyzer.getAllFactors();
-  }
-
-  /**
-   * Check if trading is generally safe
-   */
-  isTradingSafe(): boolean {
-    return this.geoAnalyzer.isTradingRecommended();
-  }
-}
+import type { ILLMProvider, TradeSignal, PortfolioContext, TradeProposal } from '../interfaces/llm-provider';
 
 /**
- * International Market Aware LLM Provider
- * Evaluates stocks from multiple countries
+ * International LLM Provider
+ * Considers global market conditions and diversification
  */
 export class InternationalLLMProvider implements ILLMProvider {
-  private countryRiskMap: Map<string, number> = new Map([
-    ["USA", 30],
-    ["UK", 35],
-    ["EUROPE", 40],
-    ["JAPAN", 35],
-    ["INDIA", 45],
-    ["CHINA", 70],
-    ["EMERGING", 60],
-  ]);
-
   async evaluateSignal(signal: TradeSignal, portfolio: PortfolioContext): Promise<TradeProposal> {
-    const country = signal.country || "INDIA";
-    const countryRisk = this.countryRiskMap.get(country) || 50;
-
-    // Evaluate signal confidence based on country risk
-    const adjustedConfidence = signal.confidence * (1 - countryRisk / 200);
-
-    // Determine appropriate position size based on country
-    let positionSizePercent = 5;
-    if (country === "USA" || country === "UK") {
-      positionSizePercent = 3; // More conservative for developed markets
-    } else if (country === "EMERGING" || country === "CHINA") {
-      positionSizePercent = 2; // Very conservative for emerging markets
-    }
-
-    // Calculate position size in rupees (assuming 100k portfolio)
-    const portfolioValue = portfolio.cash + portfolio.positions.reduce((sum, p) => sum + p.currentValue, 0);
-    const positionValue = (portfolioValue * positionSizePercent) / 100;
-    const quantity = Math.floor(positionValue / signal.price);
+    // Base confidence from signal
+    const baseConfidence = signal.confidence;
+    
+    // Check portfolio diversity
+    const positionCount = Object.keys(portfolio.positions).length;
+    const diversificationScore = Math.min(1, positionCount / 10); // Higher score with more positions
+    
+    // Risk check: ensure sufficient cash reserves
+    const cashRatio = portfolio.cash / portfolio.totalValue;
+    const hasAdequateCash = cashRatio > 0.1; // Need at least 10% cash reserve
+    
+    // Adjust confidence based on international factors
+    const adjustedConfidence = baseConfidence * (0.7 + 0.3 * diversificationScore);
+    
+    const shouldApprove = adjustedConfidence > 0.6 && 
+                         hasAdequateCash && 
+                         signal.action !== 'HOLD';
 
     return {
-      approved: adjustedConfidence >= 0.6,
+      approved: shouldApprove,
       proposedAction: signal.action,
-      quantity,
-      reason: `International trade: ${country}. Signal confidence: ${(signal.confidence * 100).toFixed(0)}%. Adjusted for country risk: ${(adjustedConfidence * 100).toFixed(0)}%.`,
-      riskAssessment: `Country: ${country} (Risk: ${countryRisk}/100). Portfolio allocation: ${positionSizePercent}%. Diversification benefit: Trading multiple countries reduces concentration risk.`,
-      recommendedStopLoss: signal.price * (1 - 0.03), // 3% stop loss
-      recommendedTakeProfit: signal.price * (1 + 0.07), // 7% take profit
+      quantity: signal.action === 'HOLD' ? 0 : Math.floor(portfolio.cash / signal.price * 0.05), // Risk 5% of cash per trade
+      reason: shouldApprove 
+        ? `Global analysis supports ${signal.action}: ${signal.reason} (diversity score: ${diversificationScore.toFixed(2)})`
+        : `International conditions warrant caution: cash ratio too low or signal weak`,
+      riskAssessment: `Portfolio diversification: ${positionCount} positions, Cash reserves: ${(cashRatio * 100).toFixed(1)}%`,
+      recommendedStopLoss: signal.action === 'BUY' ? signal.price * 0.95 : signal.price * 1.05,
+      recommendedTakeProfit: signal.action === 'BUY' ? signal.price * 1.08 : signal.price * 0.92,
     };
   }
 
   getName(): string {
-    return "InternationalMarketLLM";
+    return 'InternationalLLMProvider';
   }
 }
 
 /**
- * Sector-Aware LLM Provider
- * Considers sector-specific factors
+ * Sector Aware LLM Provider
+ * Analyzes trading signals with sector-level market awareness
  */
 export class SectorAwareLLMProvider implements ILLMProvider {
-  private sectorMultipliers: Map<string, number> = new Map([
-    ["IT", 1.1], // Tech is hot, boost confidence
-    ["PHARMA", 1.05],
-    ["BANKING", 0.95],
-    ["ENERGY", 0.9], // Energy volatile
-    ["REAL_ESTATE", 0.8], // Real estate slower
-    ["MANUFACTURING", 0.95],
-    ["FMCG", 1.0],
-  ]);
-
   async evaluateSignal(signal: TradeSignal, portfolio: PortfolioContext): Promise<TradeProposal> {
-    const sector = signal.sector || "MANUFACTURING";
-    const multiplier = this.sectorMultipliers.get(sector) || 1.0;
-
-    const adjustedConfidence = signal.confidence * multiplier;
-    const adjustedQuantity = Math.floor(15 * multiplier);
+    // Confidence-based approval strategy
+    const confidence = signal.confidence;
+    
+    // Check if position already exists (sector concentration risk)
+    const positionExists = signal.symbol in portfolio.positions;
+    const existingQuantity = positionExists 
+      ? portfolio.positions[signal.symbol]?.quantity || 0 
+      : 0;
+    
+    // Avoid over-concentration in same security
+    const allowAddition = existingQuantity === 0 || signal.action === 'SELL';
+    
+    // High confidence signals get approval if position check passes
+    const approved = confidence > 0.65 && allowAddition && signal.action !== 'HOLD';
+    
+    const quantity = approved 
+      ? Math.floor(portfolio.cash / signal.price * 0.03) // Risk 3% per sector trade
+      : 0;
 
     return {
-      approved: adjustedConfidence >= 0.6,
+      approved,
       proposedAction: signal.action,
-      quantity: adjustedQuantity,
-      reason: `Sector: ${sector}. Base confidence: ${(signal.confidence * 100).toFixed(0)}%. Sector adjusted: ${(adjustedConfidence * 100).toFixed(0)}% (Multiplier: ${multiplier}x).`,
-      riskAssessment: `Sector momentum is ${multiplier > 1 ? "positive" : "challenging"}. Recommend diversifying across sectors to manage risk.`,
-      recommendedStopLoss: signal.price * 0.95,
-      recommendedTakeProfit: signal.price * 1.08,
+      quantity,
+      reason: approved
+        ? `Sector analysis supports ${signal.action}: ${signal.reason}`
+        : `Sector concentration risk or weak signal confidence`,
+      riskAssessment: `Position concentration: ${positionExists ? 'EXISTS' : 'NEW'}, Signal confidence: ${(confidence * 100).toFixed(1)}%`,
+      recommendedStopLoss: signal.action === 'BUY' ? signal.price * 0.93 : signal.price * 1.07,
+      recommendedTakeProfit: signal.action === 'BUY' ? signal.price * 1.1 : signal.price * 0.9,
     };
   }
 
   getName(): string {
-    return "SectorAwareLLM";
+    return 'SectorAwareLLMProvider';
   }
 }
+
+/**
+ * Risk-Conservative LLM Provider
+ * Very strict approval criteria for high-risk scenarios
+ */
+export class RiskConservativeLLMProvider implements ILLMProvider {
+  async evaluateSignal(signal: TradeSignal, portfolio: PortfolioContext): Promise<TradeProposal> {
+    // Only approve very high confidence signals
+    const minConfidence = 0.8;
+    const cashBuffer = portfolio.cash / portfolio.totalValue;
+    
+    // Conservative: need 20% cash reserve
+    const hasSufficientCash = cashBuffer > 0.2;
+    
+    // Count open positions for diversification check
+    const positionCount = Object.keys(portfolio.positions).length;
+    const notOverconcentrated = positionCount < 8;
+    
+    const approved = signal.confidence >= minConfidence && 
+                    hasSufficientCash && 
+                    notOverconcentrated &&
+                    signal.action !== 'HOLD';
+    
+    const quantity = approved 
+      ? Math.floor(portfolio.cash / signal.price * 0.02) // Very small: 2% per trade
+      : 0;
+
+    return {
+      approved,
+      proposedAction: signal.action,
+      quantity,
+      reason: approved
+        ? `Conservative approval for high-confidence ${signal.action}: ${signal.reason}`
+        : `Signal does not meet conservative risk criteria`,
+      riskAssessment: `Cash buffer: ${(cashBuffer * 100).toFixed(1)}%, Positions: ${positionCount}, Confidence: ${(signal.confidence * 100).toFixed(1)}%`,
+      recommendedStopLoss: signal.action === 'BUY' ? signal.price * 0.96 : signal.price * 1.04,
+      recommendedTakeProfit: signal.action === 'BUY' ? signal.price * 1.06 : signal.price * 0.94,
+    };
+  }
+
+  getName(): string {
+    return 'RiskConservativeLLMProvider';
+  }
+}
+

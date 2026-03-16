@@ -8,6 +8,8 @@ import { PortfolioEvaluator } from './portfolio-evaluator';
 import { MockLLMProvider } from './providers/mock-provider';
 import { GeminiProvider } from './providers/gemini-provider';
 
+const logger = console;
+
 async function main() {
   console.log('🚀 LLM Orchestrator Started\n');
 
@@ -19,8 +21,9 @@ async function main() {
       provider = new GeminiProvider();
       console.log('✅ Using Gemini Provider\n');
     } catch (error) {
-      console.log(
-        '⚠️  Gemini Provider failed, falling back to Mock Provider\n'
+      logger.warn(
+        '⚠️  Gemini Provider failed, falling back to Mock Provider\n',
+        error instanceof Error ? error.message : String(error)
       );
     }
   } else {
@@ -65,4 +68,9 @@ async function main() {
   console.log('✅ LLM Orchestrator Demo Complete');
 }
 
-main().catch(console.error);
+main()
+  .then(() => console.log('✅ LLM Orchestrator Initialization Complete'))
+  .catch((error) => {
+    console.error('❌ LLM Orchestrator Error:', error instanceof Error ? error.message : String(error));
+    process.exit(1);
+  });

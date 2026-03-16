@@ -37,7 +37,7 @@ export function validateTradeApproval(
   req.body.tradeId = tradeId.toLowerCase();
   req.body.action = action.toUpperCase();
 
-  next();
+  return next();
 }
 
 /**
@@ -57,7 +57,7 @@ export function validateSymbol(
     });
   }
 
-  next();
+  return next();
 }
 
 /**
@@ -80,7 +80,7 @@ export function validateQuantity(
     }
   }
 
-  next();
+  return next();
 }
 
 /**
@@ -103,7 +103,7 @@ export function validatePrice(
     }
   }
 
-  next();
+  return next();
 }
 
 /**
@@ -137,7 +137,7 @@ export function validatePagination(
   req.query.limit = String(l);
   req.query.offset = String(o);
 
-  next();
+  return next();
 }
 
 /**
@@ -152,7 +152,7 @@ export function validateDateRange(
 
   if (start_date) {
     const d = new Date(start_date as string);
-    if (isNaN(d.getTime())) {
+    if (Number.isNaN(d.getTime())) {
       return res.status(400).json({
         error: 'Invalid start_date',
         message: 'start_date must be a valid ISO 8601 date',
@@ -162,7 +162,7 @@ export function validateDateRange(
 
   if (end_date) {
     const d = new Date(end_date as string);
-    if (isNaN(d.getTime())) {
+    if (Number.isNaN(d.getTime())) {
       return res.status(400).json({
         error: 'Invalid end_date',
         message: 'end_date must be a valid ISO 8601 date',
@@ -170,7 +170,7 @@ export function validateDateRange(
     }
   }
 
-  next();
+  return next();
 }
 
 /**
@@ -178,19 +178,19 @@ export function validateDateRange(
  */
 export function sanitizeInput(
   req: Request,
-  res: Response,
+  _res: Response,
   next: NextFunction
-) {
+): void {
   if (req.body && typeof req.body === 'object') {
     Object.keys(req.body).forEach((key) => {
       if (typeof req.body[key] === 'string') {
         // Remove potentially dangerous characters
         req.body[key] = req.body[key]
-          .replace(/[<>\"']/g, '') // Remove HTML special chars
+          .replace(/[<>"']/g, '') // Remove HTML special chars
           .trim();
       }
     });
   }
 
-  next();
+  return next();
 }

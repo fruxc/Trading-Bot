@@ -87,7 +87,7 @@ export function createAuthMiddleware(db: TradeDatabase) {
       req.apiKey = apiKey;
       req.userId = `api-key-${apiKey.id}`;
 
-      next();
+      return next();
     });
   };
 }
@@ -96,17 +96,19 @@ export function createAuthMiddleware(db: TradeDatabase) {
  * Middleware to check if user has required role
  */
 export function requireRole(...allowedRoles: Array<'trader' | 'approver' | 'admin'>) {
-  return (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
+  return (req: AuthenticatedRequest, res: Response, next: NextFunction): void => {
     if (!req.apiKey) {
-      return res.status(401).json({ error: 'Unauthorized' });
+      res.status(401).json({ error: 'Unauthorized' });
+      return;
     }
 
     if (!allowedRoles.includes(req.apiKey.role)) {
-      return res.status(403).json({
+      res.status(403).json({
         error: 'Insufficient permissions',
         message: `This endpoint requires one of these roles: ${allowedRoles.join(', ')}`,
         yourRole: req.apiKey.role,
       });
+      return;
     }
 
     next();

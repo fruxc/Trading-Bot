@@ -62,7 +62,7 @@ export function rateLimit(
       });
     }
 
-    next();
+    return next();
   };
 }
 
