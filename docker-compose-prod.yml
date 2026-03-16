@@ -1,0 +1,116 @@
+version: "3.8"
+
+services:
+  # Strategy Service - Generates trading signals
+  strategy-service:
+    build:
+      context: .
+      dockerfile: Dockerfile.strategy
+    container_name: trading-bot-strategy
+    environment:
+      - NODE_ENV=production
+      - LOG_LEVEL=info
+    volumes:
+      - ./trades.db:/app/trades.db
+      - ./logs:/app/logs
+    networks:
+      - trading-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "node", "-e", "require('http').get('http://localhost:3001/health', (r) => {if(r.statusCode!==200)throw new Error()})"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # LLM Orchestrator - Evaluates signals with AI
+  llm-orchestrator:
+    build:
+      context: .
+      dockerfile: Dockerfile.orchestrator
+    container_name: trading-bot-orchestrator
+    environment:
+      - NODE_ENV=production
+      - LOG_LEVEL=info
+      - GEMINI_API_KEY=${GEMINI_API_KEY:-}
+    volumes:
+      - ./logs:/app/logs
+    networks:
+      - trading-network
+    depends_on:
+      - strategy-service
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "node", "-e", "require('http').get('http://localhost:3002/health', (r) => {if(r.statusCode!==200)throw new Error()})"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Approval Gateway - HTTP webhooks + manual approvals
+  approval-gateway:
+    build:
+      context: .
+      dockerfile: Dockerfile.gateway
+    container_name: trading-bot-gateway
+    environment:
+      - NODE_ENV=production
+      - LOG_LEVEL=info
+      - PORT=3000
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./trades.db:/app/trades.db
+      - ./logs:/app/logs
+    networks:
+      - trading-network
+    depends_on:
+      - llm-orchestrator
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Execution Service - Places real/paper trades
+  execution-service:
+    build:
+      context: .
+      dockerfile: Dockerfile.execution
+    container_name: trading-bot-execution
+    environment:
+      - NODE_ENV=production
+      - LOG_LEVEL=info
+      - USE_MOCK_BROKER=${USE_MOCK_BROKER:-true}
+      - ZERODHA_API_KEY=${ZERODHA_API_KEY:-}
+      - ZERODHA_ACCESS_TOKEN=${ZERODHA_ACCESS_TOKEN:-}
+      - RISK_PROFILE=${RISK_PROFILE:-CONSERVATIVE}
+    volumes:
+      - ./trades.db:/app/trades.db
+      - ./logs:/app/logs
+    networks:
+      - trading-network
+    depends_on:
+      - approval-gateway
+    restart: unless-stopped
+
+  # Optional: PostgreSQL for production database (comment out if using SQLite)
+  # postgres:
+  #   image: postgres:15-alpine
+  #   container_name: trading-bot-db
+  #   environment:
+  #     POSTGRES_USER: ${DB_USER:-tradingbot}
+  #     POSTGRES_PASSWORD: ${DB_PASSWORD:-change-me}
+  #     POSTGRES_DB: ${DB_NAME:-tradingbot}
+  #   volumes:
+  #     - postgres_data:/var/lib/postgresql/data
+  #   networks:
+  #     - trading-network
+  #   restart: unless-stopped
+
+volumes:
+  postgres_data:
+    driver: local
+
+networks:
+  trading-network:
+    driver: bridge

@@ -1,0 +1,40 @@
+version: '3.8'
+
+services:
+  approval-gateway:
+    build:
+      context: .
+      dockerfile: Dockerfile.gateway
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=development
+      - GATEWAY_PORT=3000
+      - DATABASE_PATH=/app/trades.db
+    volumes:
+      - ./trades.db:/app/trades.db
+    command: npm run dev --workspace=@trading-bot/approval-gateway
+
+  llm-orchestrator:
+    build:
+      context: .
+      dockerfile: Dockerfile.orchestrator
+    environment:
+      - NODE_ENV=development
+      - GEMINI_API_KEY=${GEMINI_API_KEY:-}
+    depends_on:
+      - approval-gateway
+    command: npm run dev --workspace=@trading-bot/llm-orchestrator
+
+  strategy-service:
+    build:
+      context: .
+      dockerfile: Dockerfile.strategy
+    environment:
+      - NODE_ENV=development
+    depends_on:
+      - llm-orchestrator
+    command: npm run dev --workspace=@trading-bot/strategy-service
+
+volumes:
+  trades_db:

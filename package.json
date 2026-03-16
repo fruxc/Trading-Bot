@@ -1,0 +1,32 @@
+{
+  "name": "trading-bot",
+  "version": "1.0.0",
+  "description": "Human-in-the-Loop Trading Bot with LLM-powered decision making",
+  "private": true,
+  "workspaces": [
+    "packages/*"
+  ],
+  "scripts": {
+    "build": "turbo run build",
+    "dev": "turbo run dev --parallel",
+    "strategy": "turbo run dev --filter strategy-service",
+    "orchestrator": "turbo run dev --filter llm-orchestrator",
+    "gateway": "turbo run dev --filter approval-gateway",
+    "execution": "turbo run dev --filter execution-service",
+    "prod": "npm run build && npm run start:all",
+    "start:all": "concurrently \"npm run start:gateway\" \"npm run start:orchestrator\" \"npm run start:strategy\" \"npm run start:execution\"",
+    "start:gateway": "node packages/approval-gateway/dist/index.js",
+    "start:orchestrator": "node packages/llm-orchestrator/dist/index.js",
+    "start:strategy": "node packages/strategy-service/dist/index.js",
+    "start:execution": "node packages/execution-service/dist/index.js",
+    "lint": "turbo run lint",
+    "type-check": "turbo run type-check"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "concurrently": "^8.2.0",
+    "turbo": "^1.10.0",
+    "typescript": "^5.0.0",
+    "tsx": "^4.0.0"
+  }
+}

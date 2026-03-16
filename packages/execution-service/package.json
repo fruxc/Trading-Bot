@@ -1,0 +1,25 @@
+{
+  "name": "@trading-bot/execution-service",
+  "version": "1.0.0",
+  "description": "Execution layer for trading bot - handles broker integration and trade execution",
+  "type": "commonjs",
+  "main": "dist/index.js",
+  "scripts": {
+    "dev": "tsx watch src/index.ts",
+    "build": "tsc",
+    "type-check": "tsc --noEmit",
+    "lint": "eslint src --ext .ts",
+    "start": "node dist/index.js"
+  },
+  "dependencies": {
+    "@trading-bot/shared": "*",
+    "kiteconnect": "^5.0.0",
+    "dotenv": "^16.3.1"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "typescript": "^5.3.3",
+    "tsx": "^4.0.0",
+    "eslint": "^8.54.0"
+  }
+}

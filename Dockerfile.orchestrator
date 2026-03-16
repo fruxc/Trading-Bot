@@ -1,0 +1,20 @@
+# Multi-stage build for LLM Orchestrator
+FROM node:20-alpine AS builder
+
+WORKDIR /app
+
+COPY package*.json ./
+COPY packages/shared ./packages/shared
+COPY packages/llm-orchestrator ./packages/llm-orchestrator
+
+RUN npm install && npm run build --workspace=@trading-bot/shared && npm run build --workspace=@trading-bot/llm-orchestrator
+
+FROM node:20-alpine
+
+WORKDIR /app
+
+COPY --from=builder /app/package*.json ./
+COPY --from=builder /app/packages ./packages
+COPY --from=builder /app/node_modules ./node_modules
+
+CMD ["node", "packages/llm-orchestrator/dist/index.js"]

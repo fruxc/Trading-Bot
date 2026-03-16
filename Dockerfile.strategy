@@ -1,0 +1,20 @@
+# Multi-stage build for Strategy Service
+FROM node:20-alpine AS builder
+
+WORKDIR /app
+
+COPY package*.json ./
+COPY packages/shared ./packages/shared
+COPY packages/strategy-service ./packages/strategy-service
+
+RUN npm install && npm run build --workspace=@trading-bot/shared && npm run build --workspace=@trading-bot/strategy-service
+
+FROM node:20-alpine
+
+WORKDIR /app
+
+COPY --from=builder /app/package*.json ./
+COPY --from=builder /app/packages ./packages
+COPY --from=builder /app/node_modules ./node_modules
+
+CMD ["node", "packages/strategy-service/dist/index.js"]
