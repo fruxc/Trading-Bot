@@ -1,48 +1,128 @@
 # .gitignore - Trading Bot
 
-# Dependencies
-node_modules/
-package-lock.json
-yarn.lock
-
-# Build output
-dist/
-*.js
-*.d.ts
-*.js.map
-
-# Environment
+# ========== CRITICAL: SECURITY & CREDENTIALS ==========
 .env
 .env.local
 .env.*.local
+.env.production.local
+.env.test.local
 
-# Database
+# API Keys and Secrets (any file containing secrets)
+secrets/
+.secrets/
+*.key
+*.pem
+*.p8
+*.p12
+.aws/
+~/.aws/credentials
+
+# ========== DEPENDENCIES ==========
+node_modules/
+package-lock.json
+yarn.lock
+pnpm-lock.yaml
+.pnp
+.pnp.js
+
+# ========== BUILD OUTPUT ==========
+dist/
+build/
+out/
+*.js
+*.js.map
+*.d.ts
+*.d.ts.map
+.tsbuildinfo
+
+# ========== DATABASE & DATA ==========
 *.db
 *.db-shm
 *.db-wal
+*.sqlite
+*.sqlite3
+trades.db
+trading.db
+*.sql
+.sqlite3
 
-# IDE
+# ========== LOGS ==========
+logs/
+log/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+lerna-debug.log*
+*.log
+.pnpm-debug.log*
+
+# ========== IDE & EDITOR ==========
 .vscode/
 .idea/
 *.swp
 *.swo
 *~
-.DS_Store
-
-# Logs
-logs/
-*.log
-npm-debug.log*
-yarn-debug.log*
-
-# OS
+*.sublime-project
+*.sublime-workspace
 .DS_Store
 Thumbs.db
+.AppleDouble
+.LSOverride
+*.iml
+.classpath
+.c9/
+*.launch
+.settings/
+*.sublime-workspace
 
-# Testing
+# ========== OS FILES ==========
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+desktop.ini
+
+# ========== TESTING ==========
 coverage/
 .nyc_output/
+.jest-cache/
+.mocha-cache/
+*.lcov
+.coverage/
 
-# Turbo
+# ========== CACHE & TEMPORARY ==========
 .turbo/
-.env
+.next/
+.nuxt/
+.cache/
+.parcel-cache/
+.eslintcache
+.node_repl_history
+.npm
+.yarn/cache
+.yarn/unplugged
+.yarn/build-state.yml
+.yarn/install-state.gz
+
+# ========== OPTIONAL NPM CACHE ==========
+.npm
+npm-shrinkwrap.json
+
+# ========== PACKAGE MANAGER LOCK FILES ==========
+!package-lock.json  # Uncomment if you want to track this
+!yarn.lock           # Uncomment if you want to track this
+
+# ========== RUNTIME & PROCESS FILES ==========
+*.pid
+*.seed
+*.pid.lock
+.nodemon.json
+.prettierignore
+
+# ========== VSCODE EXTENSIONS ==========
+.vscode-test/
+.vscode/settings.json
+.vscode/launch.json
+.vscode/extensions.json
